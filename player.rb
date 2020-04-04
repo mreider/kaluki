@@ -1,18 +1,17 @@
 require "redis"
 require "date"
+require "uuidtools"
 
 class Player
-    attr_reader :player_id
     @@redis = Redis.new
-    def initialize(name)
-        t = DateTime
-        @player_id = t.now.strftime("%Y%m%d%k%M%S%L").to_i.to_s(36)
-        @@redis.set(@player_id,name)
-        return
+    def create(name)
+        player_id = UUIDTools::UUID.timestamp_create
+        @@redis.set(player_id,name)
+        return player_id
     end
 
     def get_player_name(player_id)
-        name = @@redis.get(@player_id)
+        name = @@redis.get(player_id)
         return name
     end
 

@@ -1,10 +1,8 @@
 require "redis"
 require "date"
+require "uuidtools"
 
 class Deck
-    attr_reader :cards
-    attr_reader :deck_id
-    attr_reader :picked_card
     @@redis = Redis.new
     @@card_metadata = {
         "Ace" => {:points => 15, :order => [1,14]},
@@ -17,40 +15,42 @@ class Deck
         "8" => {:points => 8, :order => [8]},
         "9" => {:points => 9, :order => [9]},
         "10" => {:points => 10, :order => [10]},
-        "Jack" => {:points => 15, :order => [11]},
-        "Queen" => {:points => 15, :order => [12]},
-        "King" => {:points => 15, :order => [13]},
+        "Jack" => {:points => 10, :order => [11]},
+        "Queen" => {:points => 10, :order => [12]},
+        "King" => {:points => 10, :order => [13]},
         "Joker" => {:points => 15, :order => [0..15]}
     }
     @@suits = ["hearts", "spades", "clubs", "diamonds"]
     @@red_suits = ["hearts", "diamonds"]
-
-    def initialize(num_of_decks=1)
-        @cards = []
+    def create(num_of_decks=1)
+        cards = Array.new
         num_of_decks.times do
             @@card_metadata.each {
                 |k,v|
                 @@suits.each { |item|
                     if k != "Joker"
-                        @cards.push(k.capitalize + " of " + item.capitalize)
+                        cards.push(k.capitalize + " of " + item.capitalize)
                     end
                 }
             }
-            @cards.push("Joker","Joker")
+            cards.push("Joker","Joker")
         end
-        @cards = @cards.shuffle
-        return true
-    end
-    def create()
+        cards = cards.shuffle
         # brew services start redis
-        t = DateTime
-        @deck_id = t.now.strftime("%Y%m%d%k%M%S%L").to_i.to_s(36)
-        @@redis.lpush(@deck_id,@cards)
-        return true
+        deck_id = UUIDTools::UUID.timestamp_create
+        @@redis.lpush(deck_id,cards)
+        return deck_id
     end
+
+    def get_cards(deck_id)
+        cards = Array.new
+        cards = @@redis.lrange(deck_id,0,-1)
+        return cards
+    end
+
     def pick_card(deck_id)
-        @picked_card = @@redis.lpop(deck_id)
-        return true
+        picked_card = @@redis.lpop(deck_id)
+        return picked_card
     end
     def destroy(deck_id)
         @@redis.del(deck_id)
