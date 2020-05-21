@@ -4,37 +4,26 @@ require "uuidtools"
 
 class Deck
     @@redis = Redis.new
-    @@card_metadata = {
-        "Ace" => {:points => 15, :order => [1,14]},
-        "2" => {:points => 2, :order => [2]},
-        "3" => {:points => 3, :order => [3]},
-        "4" => {:points => 4, :order => [4]},
-        "5" => {:points => 5, :order => [5]},
-        "6" => {:points => 6, :order => [6]},
-        "7" => {:points => 7, :order => [7]},
-        "8" => {:points => 8, :order => [8]},
-        "9" => {:points => 9, :order => [9]},
-        "10" => {:points => 10, :order => [10]},
-        "Jack" => {:points => 10, :order => [11]},
-        "Queen" => {:points => 10, :order => [12]},
-        "King" => {:points => 10, :order => [13]},
-        "Joker" => {:points => 15, :order => [0..15]}
-    }
+    @@card_names = ["Ace","2","3","4","5","6","7","8","9","10","Jack","Queen","King","Joker"]
     @@suits = ["hearts", "spades", "clubs", "diamonds"]
-    @@red_suits = ["hearts", "diamonds"]
-    def create(num_of_decks=1)
+
+    def create(num_of_decks=1,jokers=true)
         cards = Array.new
         num_of_decks.times do
-            @@card_metadata.each {
-                |k,v|
+            @@card_names.each {
+                |card|
                 @@suits.each { |item|
-                    if k != "Joker"
-                        cards.push(k.capitalize + " of " + item.capitalize)
+                    if card != "Joker"
+                        cards.push(card.capitalize + " of " + item.capitalize)
                     end
                 }
             }
-            cards.push("Joker","Joker")
+
+            if jokers == true
+                cards.push("Joker","Joker")
+            end
         end
+
         cards = cards.shuffle
         # brew services start redis
         deck_id = UUIDTools::UUID.timestamp_create
